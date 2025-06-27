@@ -1,0 +1,6 @@
+.env
+*.log
+/var/log/nexus_monitor.log
+/home/nexus-containers/
+*.tmp
+.DS_Store
