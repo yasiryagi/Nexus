@@ -22,7 +22,10 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:$PATH"
 
-# Install Nexus to /opt/nexus instead of /root/.nexus
+# Add cache busting for Nexus installation
+ARG CACHEBUST=1
+
+# Install Nexus (will always download latest due to cache busting)
 RUN curl -L https://cli.nexus.xyz/ -o /root/install.sh
 RUN chmod +x /root/install.sh
 RUN cd /root && echo "y" | bash install.sh
@@ -31,8 +34,9 @@ RUN cd /root && echo "y" | bash install.sh
 RUN cp /root/.nexus/bin/nexus-network /usr/local/bin/nexus-network
 RUN chmod +x /usr/local/bin/nexus-network
 
-# Verify installation
+# Verify installation and show version
 RUN nexus-network --help
+RUN nexus-network --version
 
 # Create logs directory
 RUN mkdir -p /root/logs

@@ -30,8 +30,8 @@ sudo mkdir -p /home/nexus-containers
 
 # Step 3: Build Docker image
 echo "Step 3: Building Docker image..."
-sudo docker build -t nexus-node .
-
+sudo docker rmi nexus-node
+sudo docker build --no-cache -t nexus-node .
 # Step 4: Test nexus in the image
 echo "Step 4: Testing nexus in image..."
 sudo docker run --rm nexus-node nexus-network --help
