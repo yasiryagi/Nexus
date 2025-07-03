@@ -167,6 +167,10 @@ for i in $(seq 1 ${#NODE_IDS_ARRAY[@]}); do
     echo ""
 done
 
+echo "=== Setup monitoring ==="
+chmod +x monitor_script.sh
+echo "*/30 * * * * $(pwd)/monitor_script.sh" | crontab -
+
 echo "=== Commands ==="
 echo "View startup: sudo docker exec nexus-1 cat /root/logs/startup.log"
 echo "View logs: sudo docker exec nexus-1 tail -f /root/logs/nexus.log"
