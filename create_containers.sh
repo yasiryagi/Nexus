@@ -1,6 +1,44 @@
 #!/bin/bash
 # Fixed container creation script
 
+echo "=== Update the host ==="
+sudo apt update -y && sudo apt upgrade -y
+
+echo "=== Check and Install Docker if needed ==="
+if command -v docker &> /dev/null; then
+    echo "✅ Docker is already installed"
+    docker --version
+    # Check if Docker service is running
+    if sudo systemctl is-active --quiet docker; then
+        echo "✅ Docker service is running"
+    else
+        echo "🔄 Starting Docker service..."
+        sudo systemctl start docker
+        sudo systemctl enable docker
+    fi
+    # Check if user is in docker group
+    if groups $USER | grep -q docker; then
+        echo "✅ User is already in docker group"
+    else
+        echo "🔄 Adding user to docker group..."
+        sudo usermod -aG docker $USER
+        echo "⚠️  Note: You may need to logout and login for group changes to take effect"
+    fi
+else
+    echo "🔄 Docker not found. Installing Docker..."
+    # Install Docker using official convenience script
+    curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
+    # Add current user to docker group
+    sudo usermod -aG docker $USER
+    # Start and enable Docker service
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    # Test Docker installation
+    sudo docker run hello-world
+    echo "✅ Docker installation completed"
+    echo "⚠️  Note: You may need to logout and login for group changes to take effect"
+fi
+
 echo "=== Creating Fixed Nexus Containers ==="
 
 # Load environment variables
