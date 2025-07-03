@@ -2,8 +2,9 @@
 # Fixed container creation script
 
 echo "=== Update the host ==="
-sudo apt update -y && sudo apt upgrade -y
-
+export DEBIAN_FRONTEND=noninteractive
+sudo -E apt update -y
+sudo -E apt upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 echo "=== Check and Install Docker if needed ==="
 if command -v docker &> /dev/null; then
     echo "✅ Docker is already installed"
