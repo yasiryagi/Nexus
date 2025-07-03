@@ -25,12 +25,12 @@ FORCE_UPGRADE=${FORCE_UPGRADE:-false}
 
 # Log function
 log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S'): $1" >> "$LOG_FILE"
+    echo "$(date '+%Y-%m-%d %H:%M:%S'): $1" | sudo tee -a "$LOG_FILE" > /dev/null
 }
 
 # Upgrade log function
 log_upgrade() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S'): $1" >> "$UPGRADE_LOG_FILE"
+    echo "$(date '+%Y-%m-%d %H:%M:%S'): $1" | sudo tee -a "$UPGRADE_LOG_FILE" > /dev/null
 }
 
 # Print and log function
@@ -113,7 +113,7 @@ should_check_for_upgrade() {
 
 # Update last upgrade check timestamp
 update_upgrade_check_timestamp() {
-    date +%s > "$LAST_UPGRADE_CHECK_FILE"
+    echo "$(date +%s)" | sudo tee "$LAST_UPGRADE_CHECK_FILE" > /dev/null
 }
 
 # Install/Update Nexus in container using official installer
@@ -153,7 +153,7 @@ create_upgrade_backup() {
     local backup_timestamp=$(date '+%Y%m%d_%H%M%S')
     local backup_path="${BACKUP_DIR}/${container_name}_upgrade_${backup_timestamp}"
     
-    mkdir -p "${backup_path}"
+    sudo mkdir -p "${backup_path}"
     
     # Backup current binary
     if sudo docker exec "${container_name}" which nexus-network &>/dev/null; then
@@ -164,7 +164,7 @@ create_upgrade_backup() {
     
     # Create backup manifest
     local current_version=$(get_current_nexus_version "${container_name}")
-    cat > "${backup_path}/backup_manifest.txt" << EOF
+    sudo tee "${backup_path}/backup_manifest.txt" > /dev/null << EOF
 Backup created: ${backup_timestamp}
 Container: ${container_name}
 Backup type: Auto-upgrade backup
@@ -312,7 +312,7 @@ check_and_upgrade() {
     if [[ "$upgrade_needed" == "true" ]]; then
         echo ""
         echo "=== Starting Upgrades ==="
-        mkdir -p "${BACKUP_DIR}"
+        sudo mkdir -p "${BACKUP_DIR}"
         
         local successful_upgrades=0
         local failed_upgrades=0
@@ -393,8 +393,8 @@ for i in $(seq 1 ${#NODE_IDS_ARRAY[@]}); do
         ((ACTIONS++))
     else
         # Check if nexus process is running
-        NEXUS_PROCESSES=$(sudo docker exec nexus-$i ps aux | grep "nexus-network" | grep -v grep | wc -l)
-        if [[ $NEXUS_PROCESSES -gt 0 ]]; then
+        NEXUS_PROCESSES=$(sudo docker exec nexus-$i ps aux | grep "nexus-network" | grep -v grep | wc -l | tr -d ' \n')
+        if [[ "${NEXUS_PROCESSES}" -gt 0 ]]; then
             echo "✅ Healthy (screen + nexus running)"
             ((HEALTHY++))
         else
