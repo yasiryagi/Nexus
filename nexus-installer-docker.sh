@@ -1,5 +1,40 @@
-cat > nexus-intsaller-docker..sh
-rn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+#!/bin/bash
+
+# ================================================================
+# NEXUS DOCKER OPTIMIZER v2.3 - DIRECT DOCKER (NO SYSTEMD)
+# Nexus runs directly as container main process with auto-restart
+# Maximum efficiency: No systemd, no screen, just pure proving
+# ================================================================
+
+set -e
+
+# Color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
+NC='\033[0m'
+
+# Configuration
+REPO_URL="https://github.com/nexus-xyz/network-api.git"
+INSTALL_DIR="/opt/nexus-docker"
+REPO_DIR="$INSTALL_DIR/network-api"
+CLI_DIR="$REPO_DIR/clients/cli"
+BINARY_PATH="$INSTALL_DIR/nexus-network"
+IMAGE_NAME="nexus-node-optimized"
+DOCKER_STORAGE="/home/nexus-containers"
+
+# Performance settings - OPTIMIZED VALUES
+CPU_USAGE_PERCENT=95
+RAM_USAGE_PERCENT=90
+MAX_THREADS_PER_NODE=16
+DIFFICULTY_LEVEL="EXTRA_LARGE_4"
+
+# Helper functions
+error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 success() { echo -e "${GREEN}[SUCCESS]${NC} ✅ $1"; }
 task() { echo -e "${MAGENTA}[TASK]${NC} $1"; }
@@ -177,7 +212,8 @@ apply_source_optimizations() {
     
     info "Optimizing network constants in src/consts.rs..."
     
-    sed -i 's/pub const RATE_LIMIT_INTERVAL_MS: u64 = 120_000;/pub const RATE_LIMIT_INTERVAL_MS: u64 = 1_000;/g' src/consts.rs
+    #below was commented out , now try not to
+    #sed -i 's/pub const RATE_LIMIT_INTERVAL_MS: u64 = 120_000;/pub const RATE_LIMIT_INTERVAL_MS: u64 = 119_000;/g' src/consts.rs
     sed -i 's/pub const INITIAL_BACKOFF_MS: u64 = 120_000;/pub const INITIAL_BACKOFF_MS: u64 = 5_000;/g' src/consts.rs
     sed -i '0,/pub const INITIAL_BACKOFF_MS: u64 = 1000;/{s/pub const INITIAL_BACKOFF_MS: u64 = 1000;/pub const INITIAL_BACKOFF_MS: u64 = 500;/}' src/consts.rs
     sed -i 's/pub const PROMOTION_THRESHOLD_SECS: u64 = 7 \* 60;/pub const PROMOTION_THRESHOLD_SECS: u64 = 15 * 60;/g' src/consts.rs
@@ -185,7 +221,7 @@ apply_source_optimizations() {
     sed -i 's/pub const SUBMISSION_MAX_REQUESTS_PER_WINDOW: u32 = 100;/pub const SUBMISSION_MAX_REQUESTS_PER_WINDOW: u32 = 200;/g' src/consts.rs
     sed -i '0,/pub const RATE_LIMIT_INTERVAL_MS: u64 = 100;/{s/pub const RATE_LIMIT_INTERVAL_MS: u64 = 100;/pub const RATE_LIMIT_INTERVAL_MS: u64 = 50;/}' src/consts.rs
     sed -i 's/pub const EXTRA_RETRY_DELAY_SECS: u64 = 10;/pub const EXTRA_RETRY_DELAY_SECS: u64 = 2;/g' src/consts.rs
-    
+
     info "Optimizing CPU and memory limits in src/session/setup.rs..."
     
     sed -i 's/let max_workers = ((total_cores as f64 \* 0.75).ceil() as usize).max(1);/let max_workers = ((total_cores as f64 \* 0.95).ceil() as usize).max(1);/g' src/session/setup.rs
@@ -220,7 +256,11 @@ compile_binary() {
     source "$HOME/.cargo/env" 2>/dev/null || true
     export PATH="$HOME/.cargo/bin:$PATH"
     
+    # ADD THESE AGGRESSIVE FLAGS
+    #export RUSTFLAGS="-C target-cpu=native -C opt-level=3 -C lto=thin -C embed-bitcode=yes"
+    export RUSTFLAGS="-C target-cpu=native -C opt-level=3 -C codegen-units=1 -C embed-bitcode=yes" 
     info "Starting compilation with optimizations (10-15 minutes)..."
+    info "Starting compilation with AGGRESSIVE optimizations (15-25 minutes)..."
     
     if ! cargo build --release; then
         error "Cargo build failed"
